@@ -164,7 +164,20 @@ def parse_student_course_clearance_request(data_from_client):
     :param data_from_client: json blob containing the entire HTTP request
     :return:
     """
-    add_msg_to_scrollbox("{}\n".format(data_from_client))
+    # the HTTP request has client message details in json dictionary format
+    # so we use this helper method to extract that into 3 variables
+    # action, student, course name
+    # the number 7 indicates we want the 8th line of the original message
+    # the 8th line is the body of the message
+    #   recollect HTTP header has 1 request line + 5 headers + 1 blank line before the body
+    action, student_name, course_name = extract_message_details(
+        data_from_client.split("\n")[7], "action", "student", "course"
+    )
+    add_msg_to_scrollbox(
+        "Student {} wants action {} for course {}\n".format(
+            student_name, action, course_name
+        )
+    )
 
 
 def read_from_client(client_connection, event_mask):

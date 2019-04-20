@@ -42,7 +42,9 @@ def extract_client_name(http_request):
     return client_name
 
 
-def extract_message_details(line):
+def extract_message_details(
+    line, field1="mode", field2="destination", field3="message"
+):
     """
     Given a line of text containing message details
     we extract the required fields
@@ -67,11 +69,9 @@ def extract_message_details(line):
 
     try:
         line = json.loads(line)
-        mode = line.get("mode", None)
-        source_or_destination = line.get("destination", None) or line.get(
-            "source", None
-        )
-        message = line.get("message", None)
+        mode = line.get(field1, None)
+        source_or_destination = line.get(field2, None) or line.get("source", None)
+        message = line.get(field3, None)
         return (mode, source_or_destination, message)
     except json.decoder.JSONDecodeError as e:
         # we received ACK message for a message we sent earlier
