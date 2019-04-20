@@ -13,6 +13,7 @@ import selectors
 import pprint
 
 from http_helper import *
+from student_request_queue import StudentRequestQueue
 
 PPRINTER = pprint.PrettyPrinter(indent=4)
 # References:
@@ -67,6 +68,8 @@ scr = scrolledtext.ScrolledText(
 # a global variable that tracks activities on several client sockets
 # this is used from "selectors" module of python [https://pymotw.com/3/selectors/]
 def_selector = selectors.DefaultSelector()
+# A simple queue for maintaining student requests
+student_request_queue = StudentRequestQueue()
 
 
 def get_address_from_name(name):
@@ -173,6 +176,7 @@ def parse_student_course_clearance_request(data_from_client):
     action, student_name, course_name = extract_message_details(
         data_from_client.split("\n")[7], "action", "student", "course"
     )
+    student_request_queue.add_request(student_name, course_name)
     add_msg_to_scrollbox(
         "Student {} wants action {} for course {}\n".format(
             student_name, action, course_name
