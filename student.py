@@ -23,7 +23,7 @@ from http_helper import *
 
 
 # a global socket object for all functions to access and send/recv
-advisor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+student_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # a global connected status - true if connection is active, false otherwise
 connected = False
 # a global tkinter window instance - accessed by thread and main
@@ -59,7 +59,7 @@ def get_clients_from_server():
     :return: None
     """
     # send a HTTP GET request to get all the client names
-    advisor_socket.send(bytes(prepare_get_all_client_names_request(), "UTF-8"))
+    student_socket.send(bytes(prepare_get_all_client_names_request(), "UTF-8"))
 
 
 def on_message_cast_option():
@@ -93,7 +93,7 @@ def exit_program():
     :return: None
     """
     # exit cleanly by closing socket and destroying the tkinter window
-    advisor_socket.close()
+    student_socket.close()
     client_window.destroy()
 
 
@@ -113,7 +113,7 @@ def send_student_course_clearance_message(student_course_tuple):
 
     # send a HTTP POST message to the server
     # body contains the action (requesting course clearance in this case), student name and course name
-    sent_bytes = advisor_socket.send(
+    sent_bytes = student_socket.send(
         bytes(
             prepare_http_msg_request("POST", COURSE_CLEARANCE, json.dumps(body)),
             "UTF-8",
@@ -267,7 +267,7 @@ def receive_from_server():
     """
     try:
         while True:
-            data_from_server = advisor_socket.recv(MAX_MESSAGE_SIZE)
+            data_from_server = student_socket.recv(MAX_MESSAGE_SIZE)
             data_from_server = data_from_server.decode("UTF-8")
             if data_from_server:
                 # non-empty data - so parse this
@@ -291,7 +291,7 @@ def connect_to_server():
     """
     try:
         student_name_entered = student_name.get()
-        global advisor_socket
+        global student_socket
         student_socket.connect((server_host, server_port))  # connection to server
         student_socket.sendall(
             bytes(prepare_post_client_name_request(student_name_entered), "UTF-8")
