@@ -8,7 +8,7 @@ Login ID: vxk2465
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, END
 import socket
-from threading import Thread
+from threading import Thread, Timer
 from http_helper import *
 
 # References:
@@ -210,6 +210,21 @@ def setup_advisor_window():
     advisor_window.protocol("WM_DELETE_WINDOW", exit_program)
 
 
+def get_all_pending_requests():
+    """
+    Get all pending messages from the MQS
+    Restart the timer once again for 3 seconds
+    :return: None
+    """
+    add_msg_to_scrollbox("Getting all pending student-course clearance requests\n")
+
+    # Restart the timer again to one second - at the end of the second, we call
+    # clock_tick again which increments the value by 1
+    t = Timer(3.0, get_all_pending_requests)
+    t.daemon = True
+    t.start()
+
+
 def main():
     """
     main method of the program
@@ -219,6 +234,13 @@ def main():
     try:
         setup_advisor_window()
         connect_to_server()
+        # Instantiate a timer for one second - at the end of one second call "clock_tick"
+        t = Timer(3.0, get_all_pending_requests)
+        # make the timer a background thread
+        t.daemon = True
+        # Start the timer object
+        t.start()
+
         advisor_window.mainloop()
     except RuntimeError:
         print("Exiting...")
