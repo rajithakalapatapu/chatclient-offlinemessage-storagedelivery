@@ -29,11 +29,13 @@ connected = False
 # a global tkinter window instance - accessed by thread and main
 client_window = tk.Tk()
 # a global variable to retrieve username - accessed by thread and main
-username = tk.StringVar()
+student_name = tk.StringVar()
+# a global variable to retrieve course name - accessed by thread and main
+course_name = tk.StringVar()
 # a global label to show connection status - accessed by thread and main
 connection_status = ttk.Label(client_window, text="Not connected to server")
 # a global variable to retrieve message entered by client - accessed by thread and main
-msg_client_entered = tk.StringVar()
+student_course_entered = ()
 # a global variable to show incoming message - scrollbox - accessed by thread and main
 scroll_width = 32
 scroll_height = 15
@@ -44,20 +46,10 @@ msg_area = scrolledtext.ScrolledText(
 default_msg = "Enter message here..."
 # a global variable storing the message cast (1:1 OR 1:N) option - accessed by thread and main
 message_cast_option = tk.IntVar()
-# a global variable to store the client to send 1:1 message to - accessed by thread and main
-chosen_client = tk.StringVar()
 # a global variable to store the radiobutton objects for all client names
 # when we get info about a new client, we delete all the radio objects on the
 # client UI and redraw them
 all_client_name_radiobuttons = []
-
-
-def on_choosing_client():
-    """
-    Responsible for printing console log to serve for debugging purposes
-    :return:
-    """
-    print("Chose to send 1-1 to client {}".format(chosen_client.get()))
 
 
 def get_clients_from_server():
@@ -105,70 +97,77 @@ def exit_program():
     client_window.destroy()
 
 
-def send_one_to_one_message(destination, message):
+def send_student_course_clearance_message(student_course_tuple):
     """
-    send a 1:1 'message' from this client to 'destination' client
-    :param destination: client name to send the message to
-    :param message: the actual message to send
+    send message to the MQS that a student is requesting clearance for course
+    :param student_course_tuple: a tuple containing the student name and course name
     :return: None
     """
     # prepare body of the http request
-    body = {"mode": "1-1", "destination": destination, "message": message}
+    body = {
+        "action": COURSE_CLEARANCE,
+        "student": student_course_tuple[0],
+        "course": student_course_tuple[1],
+    }
     import json
 
     # send a HTTP POST message to the server
-    # body contains the mode (1:1 in this case), destination client to send it to
-    # and the actual message entered by the client
-    client_socket.send(
-        bytes(prepare_http_msg_request("POST", SEND_MESSAGE, json.dumps(body)), "UTF-8")
+    # body contains the action (requesting course clearance in this case), student name and course name
+    sent_bytes = client_socket.send(
+        bytes(
+            prepare_http_msg_request("POST", COURSE_CLEARANCE, json.dumps(body)),
+            "UTF-8",
+        )
     )
-
-
-def send_one_to_n_message(message):
-    """
-    send a 1:N 'message' from this client to all clients
-    :param message: the actual message to send
-    :return: None
-    """
-    body = {"mode": "1-N", "message": message}
-    import json
-
-    # send a HTTP POST message to the server
-    # body contains the mode (1:N in this case)
-    # and the actual message entered by the client
-    client_socket.send(
-        bytes(prepare_http_msg_request("POST", SEND_MESSAGE, json.dumps(body)), "UTF-8")
-    )
+    if sent_bytes:
+        # add the student-course combo to the student scrollbox
+        add_msg_to_scrollbox(
+            "Sent clearance request for for {} and course {}\n".format(
+                student_course_tuple[0], student_course_tuple[1]
+            )
+        )
+    else:
+        add_msg_to_scrollbox(
+            "Error sending clearance request for {} and course {}\n".format(
+                student_course_tuple[0], student_course_tuple[1]
+            )
+        )
 
 
 def send_to_server():
     """
-    Read message entered by the client
-    Validate entered message
-        if empty, ask user to enter again
-        if not, see if it is 1:1 or 1:N and send message
-    Send the message to the server via HTTP POST request
+    - getting the user input
+    - validate the user input until valid non-empty entry is given
+    - Read message entered by the client
+    - Validate entered message
+        - if empty, ask user to enter again
+        - if not, see if it is 1:1 or 1:N and send message
+    - Send the message to the server via HTTP POST request
     :return:
     """
-    msg = msg_client_entered.get()
+    if not student_name.get():
+        messagebox.showerror("Username invalid", "Enter a non-empty username")
+        return
+    if not course_name.get():
+        messagebox.showerror(
+            "Course name invalid", "Enter a non-empty valid course name"
+        )
+        return
     global connected
-    # if the message is empty or full of white spaces or the message prompt
+    if not connected:
+        connect_to_server()
+    # if the course name is empty or full of white spaces or the message prompt
     # or if we are not yet connected, don't send the message yet.
-    if not msg.strip() or msg == default_msg or not connected:
-        msg_client_entered.set(default_msg)
-    else:
-        # we're connected and we have a non-empty valid message to send here
-        msg_client_entered.set("")
-        global message_cast_option
-        # call helper method to send 1:1 or 1:N message
-        # based on which radiobutton was clicked
-        if message_cast_option.get() == 0:  # was the 1:1 button clicked?
-            send_one_to_one_message(chosen_client.get(), msg)
-        else:  # was the 1:N button clicked?
-            send_one_to_n_message(msg)
-        # add the message to the client scrollbox
-        add_msg_to_scrollbox("{}\n".format(msg))
-        print("{} Sent message {} to the server".format("*" * 4, msg))
+    if not course_name.get() or not course_name.get().strip():
+        messagebox.showerror(
+            "Course name invalid", "Enter a non-empty valid course name"
+        )
+        return
+    # we're connected and we have a non-empty valid message to send here
+    global student_course_entered
+    student_course_entered = (student_name.get(), course_name.get())
+
+    send_student_course_clearance_message(student_course_entered)
 
 
 def add_msg_to_scrollbox(msg):
@@ -181,37 +180,6 @@ def add_msg_to_scrollbox(msg):
     msg_area.insert(END, msg)
     # auto scroll the scrollbox to the end
     msg_area.see(END)
-
-
-def display_client_names(names):
-    """
-    Takes a list holding names of all clients currently connected to server
-    and displays radiobuttons for each client name
-
-    :param names: a list holding names of all clients currently connected to server
-    :return: None
-    """
-    global all_client_name_radiobuttons
-    for button in all_client_name_radiobuttons:
-        # remove all the older radio buttons
-        # we have a new list of names - so use that to display client names
-        button.destroy()
-    for index, name in enumerate(names):
-        # add radio buttons for each client name
-        # when user chooses a client to send to, it's name will
-        # be stored in "chosen_client" variable
-
-        # eg: if client1 radiobutton is chosen, the "chosen_client" variable
-        # will have the value "client1"
-        radio = ttk.Radiobutton(
-            client_window,
-            text=name,
-            variable=chosen_client,
-            command=on_choosing_client,
-            value=name,
-        )
-        radio.grid(column=index, row=17, padx=10, pady=10)
-        all_client_name_radiobuttons.append(radio)
 
 
 def parse_connection_request_response(msg):
@@ -279,7 +247,7 @@ def parse_incoming_message(msg):
     print("Received {} from server".format(msg))
     if GET_ALL_CLIENTS in msg:
         # we got a response to our request to get all client names
-        display_client_names(parse_client_name_response(msg)[1:])
+        print("An unsupported operation happened! {}".format(msg))
     elif REGISTER_CLIENT_NAME in msg:
         # we got a response to our request to register a client name
         parse_connection_request_response(msg)
@@ -316,22 +284,17 @@ def receive_from_server():
 def connect_to_server():
     """
     responsible for
-    1 - getting the user input
-    2 - validate the user input until valid non-empty entry is given
-    3 - connect socket to the server
-    4 - send client name to the server in HTTP format (sendall)
-    5 - launch thread to start receiving data from server
+    - connect socket to the server
+    - send client name to the server in HTTP format (sendall)
+    - launch thread to start receiving data from server
     :return:
     """
     try:
-        if not username.get():
-            messagebox.showerror("Username invalid", "Enter a non-empty username")
-            return
-        name_entered = username.get()
+        student_name_entered = student_name.get()
         global client_socket
         client_socket.connect((server_host, server_port))  # connection to server
         client_socket.sendall(
-            bytes(prepare_post_client_name_request(name_entered), "UTF-8")
+            bytes(prepare_post_client_name_request(student_name_entered), "UTF-8")
         )  # send user-name to server
         # start thread to receive data from server
         t = Thread(target=receive_from_server)
@@ -353,32 +316,27 @@ def setup_client_window():
     client_window.geometry("800x640")
     client_window.resizable(False, False)
 
-    # set up fields for entering user-name
-    username_label = ttk.Label(client_window, text="Enter a username")
+    # set up fields for entering student-name
+    username_label = ttk.Label(client_window, text="Enter a student name")
     username_label.grid(column=0, row=1, padx=30, pady=15)
-    username_entry = ttk.Entry(client_window, width=32, textvariable=username)
+    username_entry = ttk.Entry(client_window, width=32, textvariable=student_name)
     username_entry.grid(column=1, row=1, padx=30, pady=15)
 
-    # set up button for connecting to the server
-    # when this button is clicked, "connect_to_server"
-    # is called to establish connection to the server
-    username_register = ttk.Button(
-        client_window, text="Connect", command=connect_to_server
-    )
-    username_register.grid(column=2, row=1, padx=30, pady=15)
+    # set up fields for entering course name
+    course_label = ttk.Label(client_window, text="Enter a course name")
+    course_label.grid(column=0, row=2, padx=30, pady=15)
+    course_entry = ttk.Entry(client_window, width=32, textvariable=course_name)
+    course_entry.grid(column=1, row=2, padx=30, pady=15)
 
     # set up a label to show connection status to the server
-    connection_status.grid(column=1, row=2, padx=30, pady=15)
+    connection_status.grid(column=1, row=4, padx=30, pady=15)
 
     # set up text area to see incoming messages
     msg_area.grid(column=1, row=5, padx=5, pady=5)
 
-    # set up widgets to get chat message input and send message
-    msg_entry = ttk.Entry(client_window, width=32, textvariable=msg_client_entered)
-    msg_entry.grid(column=1, row=25, padx=30, pady=15)
-    msg_client_entered.set(default_msg)
+    # set up widget to send message
     msg_send = ttk.Button(client_window, text="Send", command=send_to_server)
-    msg_send.grid(column=2, row=25, padx=30, pady=15)
+    msg_send.grid(column=1, row=3, padx=30, pady=15)
 
     # set up a button to exit the client UI
     # when this button is clicked, "exit_program"
@@ -388,18 +346,6 @@ def setup_client_window():
 
     # cleanly close the socket and destroy the tkinter window when X button is clicked
     client_window.protocol("WM_DELETE_WINDOW", exit_program)
-
-    # provide widgets to choose between 1:1 or 1:N messaging
-    message_cast_options = ["1:1", "1:N"]
-    for index, option in enumerate(message_cast_options):
-        radio = ttk.Radiobutton(
-            client_window,
-            text=option,
-            variable=message_cast_option,
-            command=on_message_cast_option,
-            value=index,
-        )
-        radio.grid(column=index, row=13, padx=10, pady=10)
 
 
 def main():

@@ -155,7 +155,16 @@ def parse_data_from_client(client_address, data_from_client):
             bytes(prepare_ack_message(), "UTF-8")
         )
     else:
-        pass
+        add_msg_to_scrollbox("PARSE THIS {}\n".format(response_message))
+
+
+def parse_student_course_clearance_request(data_from_client):
+    """
+    parse student course clearance request and add it to a queue
+    :param data_from_client: json blob containing the entire HTTP request
+    :return:
+    """
+    add_msg_to_scrollbox("{}\n".format(data_from_client))
 
 
 def read_from_client(client_connection, event_mask):
@@ -209,6 +218,9 @@ def read_from_client(client_connection, event_mask):
             connected_clients[client_address][0].sendall(
                 bytes(response_message, "UTF-8")
             )
+        elif COURSE_CLEARANCE in data_from_client:
+            # A student wants clearance to take a course
+            parse_student_course_clearance_request(data_from_client)
         else:
             # A client wants to send message to another client
             parse_data_from_client(client_address, data_from_client)
