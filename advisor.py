@@ -27,64 +27,15 @@ advisor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # a global connected status - true if connection is active, false otherwise
 connected = False
 # a global tkinter window instance - accessed by thread and main
-client_window = tk.Tk()
-# a global variable to retrieve username - accessed by thread and main
-student_name = tk.StringVar()
-# a global variable to retrieve course name - accessed by thread and main
-course_name = tk.StringVar()
+advisor_window = tk.Tk()
 # a global label to show connection status - accessed by thread and main
-connection_status = ttk.Label(client_window, text="Not connected to server")
-# a global variable to retrieve message entered by client - accessed by thread and main
-student_course_entered = ()
+connection_status = ttk.Label(advisor_window, text="Not connected to server")
 # a global variable to show incoming message - scrollbox - accessed by thread and main
 scroll_width = 32
 scroll_height = 15
 msg_area = scrolledtext.ScrolledText(
-    client_window, width=scroll_width, height=scroll_height, wrap=tk.WORD
+    advisor_window, width=scroll_width, height=scroll_height, wrap=tk.WORD
 )
-# a global variable storing the default message that a client can send - accessed by thread and main
-default_msg = "Enter message here..."
-# a global variable storing the message cast (1:1 OR 1:N) option - accessed by thread and main
-message_cast_option = tk.IntVar()
-# a global variable to store the radiobutton objects for all client names
-# when we get info about a new client, we delete all the radio objects on the
-# Student UI and redraw them
-all_client_name_radiobuttons = []
-
-
-def get_clients_from_server():
-    """
-    method to request all client names from server
-    uses HTTP GET method to get all client names
-    :return: None
-    """
-    # send a HTTP GET request to get all the client names
-    advisor_socket.send(bytes(prepare_get_all_client_names_request(), "UTF-8"))
-
-
-def on_message_cast_option():
-    """
-    When user selects 1:1, the client has to fetch names of all clients connected
-    to the server
-    When user selects 1:N, there is no need to fetch all client names - so we print
-    to console
-    :return: None
-    """
-    if message_cast_option.get() == 0:
-        # The user selected 1-1 message option
-        print(
-            "{} Client intends to send a 1-1 message - so get client names".format(
-                "*" * 4
-            )
-        )
-        # get all the client names from server via a HTTP get message
-        get_clients_from_server()
-    else:
-        # The user selected 1-N message option - we print it for debugging purposes
-        print("{} Client intends to send a 1-N message".format("*" * 4))
-        # in case the user selected 1-1 before selecting 1-N, we destroy the radio buttons
-        for button in all_client_name_radiobuttons:
-            button.destroy()
 
 
 def exit_program():
@@ -94,80 +45,7 @@ def exit_program():
     """
     # exit cleanly by closing socket and destroying the tkinter window
     advisor_socket.close()
-    client_window.destroy()
-
-
-def send_student_course_clearance_message(student_course_tuple):
-    """
-    send message to the MQS that a student is requesting clearance for course
-    :param student_course_tuple: a tuple containing the student name and course name
-    :return: None
-    """
-    # prepare body of the http request
-    body = {
-        "action": COURSE_CLEARANCE,
-        "student": student_course_tuple[0],
-        "course": student_course_tuple[1],
-    }
-    import json
-
-    # send a HTTP POST message to the server
-    # body contains the action (requesting course clearance in this case), student name and course name
-    sent_bytes = advisor_socket.send(
-        bytes(
-            prepare_http_msg_request("POST", COURSE_CLEARANCE, json.dumps(body)),
-            "UTF-8",
-        )
-    )
-    if sent_bytes:
-        # add the student-course combo to the student scrollbox
-        add_msg_to_scrollbox(
-            "Sent clearance request for for {} and course {}\n".format(
-                student_course_tuple[0], student_course_tuple[1]
-            )
-        )
-    else:
-        add_msg_to_scrollbox(
-            "Error sending clearance request for {} and course {}\n".format(
-                student_course_tuple[0], student_course_tuple[1]
-            )
-        )
-
-
-def send_to_server():
-    """
-    - getting the user input
-    - validate the user input until valid non-empty entry is given
-    - Read message entered by the client
-    - Validate entered message
-        - if empty, ask user to enter again
-        - if not, see if it is 1:1 or 1:N and send message
-    - Send the message to the server via HTTP POST request
-    :return:
-    """
-    if not student_name.get():
-        messagebox.showerror("Username invalid", "Enter a non-empty username")
-        return
-    if not course_name.get():
-        messagebox.showerror(
-            "Course name invalid", "Enter a non-empty valid course name"
-        )
-        return
-    global connected
-    if not connected:
-        connect_to_server()
-    # if the course name is empty or full of white spaces or the message prompt
-    # or if we are not yet connected, don't send the message yet.
-    if not course_name.get() or not course_name.get().strip():
-        messagebox.showerror(
-            "Course name invalid", "Enter a non-empty valid course name"
-        )
-        return
-    # we're connected and we have a non-empty valid message to send here
-    global student_course_entered
-    student_course_entered = (student_name.get(), course_name.get())
-
-    send_student_course_clearance_message(student_course_entered)
+    advisor_window.destroy()
 
 
 def add_msg_to_scrollbox(msg):
@@ -290,11 +168,11 @@ def connect_to_server():
     :return:
     """
     try:
-        student_name_entered = student_name.get()
+        advisor_name = "advisor"
         global advisor_socket
-        student_socket.connect((server_host, server_port))  # connection to server
-        student_socket.sendall(
-            bytes(prepare_post_client_name_request(student_name_entered), "UTF-8")
+        advisor_socket.connect((server_host, server_port))  # connection to server
+        advisor_socket.sendall(
+            bytes(prepare_post_client_name_request(advisor_name), "UTF-8")
         )  # send user-name to server
         # start thread to receive data from server
         t = Thread(target=receive_from_server)
@@ -306,27 +184,15 @@ def connect_to_server():
         connected = False
 
 
-def setup_client_window():
+def setup_advisor_window():
     """
     setup tkinter based client window and its widgets
     """
 
     # set up client window details
-    client_window.title("Student UI")
-    client_window.geometry("800x640")
-    client_window.resizable(False, False)
-
-    # set up fields for entering student-name
-    username_label = ttk.Label(client_window, text="Enter a student name")
-    username_label.grid(column=0, row=1, padx=30, pady=15)
-    username_entry = ttk.Entry(client_window, width=32, textvariable=student_name)
-    username_entry.grid(column=1, row=1, padx=30, pady=15)
-
-    # set up fields for entering course name
-    course_label = ttk.Label(client_window, text="Enter a course name")
-    course_label.grid(column=0, row=2, padx=30, pady=15)
-    course_entry = ttk.Entry(client_window, width=32, textvariable=course_name)
-    course_entry.grid(column=1, row=2, padx=30, pady=15)
+    advisor_window.title("Advisor Window")
+    advisor_window.geometry("800x640")
+    advisor_window.resizable(False, False)
 
     # set up a label to show connection status to the server
     connection_status.grid(column=1, row=4, padx=30, pady=15)
@@ -334,29 +200,26 @@ def setup_client_window():
     # set up text area to see incoming messages
     msg_area.grid(column=1, row=5, padx=5, pady=5)
 
-    # set up widget to send message
-    msg_send = ttk.Button(client_window, text="Send", command=send_to_server)
-    msg_send.grid(column=1, row=3, padx=30, pady=15)
-
-    # set up a button to exit the Student UI
+    # set up a button to exit the client UI
     # when this button is clicked, "exit_program"
     # is called to close the socket connection and exit the program
-    exit_button = ttk.Button(client_window, text="Exit", command=exit_program)
+    exit_button = ttk.Button(advisor_window, text="Exit", command=exit_program)
     exit_button.grid(column=1, row=30, padx=10, pady=10)
 
     # cleanly close the socket and destroy the tkinter window when X button is clicked
-    client_window.protocol("WM_DELETE_WINDOW", exit_program)
+    advisor_window.protocol("WM_DELETE_WINDOW", exit_program)
 
 
 def main():
     """
     main method of the program
-        - responsible for setting up the tkinter based Student UI
+        - responsible for setting up the tkinter based client UI
         - responsible for calling the tkinter main loop (event loop)
     """
     try:
-        setup_client_window()
-        client_window.mainloop()
+        setup_advisor_window()
+        connect_to_server()
+        advisor_window.mainloop()
     except RuntimeError:
         print("Exiting...")
 
