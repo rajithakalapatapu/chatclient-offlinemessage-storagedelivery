@@ -181,7 +181,11 @@ def read_from_client(client_connection, event_mask):
         # show what we received on the scrollbox
         if client_address in connected_clients.keys():
             # if it is existing client, just show the name
-            add_msg_to_scrollbox("{}: \t {}\n".format(connected_clients[client_address][2], data_from_client))
+            add_msg_to_scrollbox(
+                "{}: \t {}\n".format(
+                    connected_clients[client_address][2], data_from_client
+                )
+            )
         else:
             # if it is a new client, show the address for now
             # in the next message, we'll show the name on the scrollbox
