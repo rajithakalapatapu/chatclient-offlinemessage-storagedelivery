@@ -148,7 +148,7 @@ def send_to_server():
     :return:
     """
     if not student_name.get():
-        messagebox.showerror("Username invalid", "Enter a non-empty username")
+        messagebox.showerror("Student name invalid", "Enter a non-empty student name")
         return
     if not course_name.get():
         messagebox.showerror(
@@ -292,11 +292,10 @@ def connect_to_server():
     :return:
     """
     try:
-        student_name_entered = student_name.get()
         global student_socket
         student_socket.connect((server_host, server_port))  # connection to server
         student_socket.sendall(
-            bytes(prepare_post_client_name_request(student_name_entered), "UTF-8")
+            bytes(prepare_post_client_name_request("student"), "UTF-8")
         )  # send user-name to server
         # start thread to receive data from server
         t = Thread(target=receive_from_server)
