@@ -284,14 +284,9 @@ def send_request_to_get_all_pending_clearances():
             "UTF-8",
         )
     )
-    if sent_bytes:
-        # add the student-course combo to the student scrollbox
+    if not sent_bytes:
         add_msg_to_scrollbox(
-            "Sent request to get all pending course clearance requests"
-        )
-    else:
-        add_msg_to_scrollbox(
-            "Error sending request to get all pending course clearance requests"
+            "Error sending request to get all pending course clearance requests\n"
         )
 
 

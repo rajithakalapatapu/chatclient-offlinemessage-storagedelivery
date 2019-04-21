@@ -14,6 +14,8 @@ import pprint
 
 from http_helper import *
 from student_request_queue import StudentRequestQueue
+from notification_request_queue import NotificationRequestQueue
+
 
 PPRINTER = pprint.PrettyPrinter(indent=4)
 # References:
@@ -70,7 +72,8 @@ scr = scrolledtext.ScrolledText(
 def_selector = selectors.DefaultSelector()
 # A simple queue for maintaining student requests
 student_request_queue = StudentRequestQueue()
-
+# A simple queue for maintaining cleared student requests
+notification_queue = NotificationRequestQueue()
 
 def get_address_from_name(name):
     """
@@ -184,6 +187,31 @@ def parse_student_course_clearance_request(data_from_client):
     )
 
 
+def parse_processed_course_clearance_data(data_from_client):
+    """
+
+    :param data_from_client:
+    :return: None
+    """
+    # the HTTP request has all the course clearances that the advisor has completed
+    # the number 7 indicates we want the 8th line of the original message
+    # the 8th line is the body of the message
+    #   recollect HTTP header has 1 request line + 5 headers + 1 blank line before the body
+    # extract them
+    data_from_client = data_from_client.split("\n")
+    import json
+
+    cleared_requests = json.load(data_from_client)
+    if len(cleared_requests) > 1:
+        cleared_requests = cleared_requests[1:]
+
+        for cleared_request in cleared_requests:
+            # store them in the queue for notification process
+            notification_queue.add_request(cleared_request)
+
+        add_msg_to_scrollbox("Queued up clearance for notification process\n")
+
+
 def read_from_client(client_connection, event_mask):
     """
     this method is responsible for reading data from a client
@@ -250,6 +278,10 @@ def read_from_client(client_connection, event_mask):
             connected_clients[client_address][0].sendall(
                 bytes(response_message, "UTF-8")
             )
+        elif PROCESSED_COURSE_CLEARANCE in data_from_client:
+            # Advisor process sent us data containing all processed course
+            # clearance requests
+            parse_processed_course_clearance_data(data_from_client)
         else:
             # A client wants to send message to another client
             parse_data_from_client(client_address, data_from_client)
