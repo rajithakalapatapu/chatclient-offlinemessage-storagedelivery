@@ -202,15 +202,16 @@ def parse_processed_course_clearance_data(data_from_client):
     data_from_client = data_from_client.split("\n")
     import json
 
-    cleared_requests = json.load(data_from_client)
-    if len(cleared_requests) > 1:
-        cleared_requests = cleared_requests[1:]
+    # extract line we care about
+    # {"resource": "processed/student/course/clearance", "data": [["sss", "ccc", true]]}'
+    cleared_requests = json.loads(data_from_client[7])
+    cleared_requests_data = cleared_requests.get("data", [])
+    for cleared_request in cleared_requests_data:
+        # store them in the queue for notification process
+        add_msg_to_scrollbox("Adding {} to notification_queue".format(cleared_request))
+        notification_queue.add_request(cleared_request[0], cleared_request[1], cleared_request[2])
 
-        for cleared_request in cleared_requests:
-            # store them in the queue for notification process
-            notification_queue.add_request(cleared_request)
-
-        add_msg_to_scrollbox("Queued up clearance for notification process\n")
+    add_msg_to_scrollbox("Queued up clearance for notification process\n")
 
 
 def read_from_client(client_connection, event_mask):
@@ -283,6 +284,19 @@ def read_from_client(client_connection, event_mask):
             # Advisor process sent us data containing all processed course
             # clearance requests
             parse_processed_course_clearance_data(data_from_client)
+        elif GET_CLEARED_REQUESTS in data_from_client:
+            # Notification process wants to get all cleared requests
+            cleared_requests = notification_queue.get_all_cleared_requests()
+            add_msg_to_scrollbox("Going to send notification process {}".format(cleared_requests))
+            response_message = prepare_get_all_pending_requests_response(
+                [(GET_CLEARED_REQUESTS,)] + cleared_requests
+            )
+            add_msg_to_scrollbox(
+                "Sending all approved/rejected to Notification process"
+            )
+            connected_clients[client_address][0].sendall(
+                bytes(response_message, "UTF-8")
+            )
         else:
             # A client wants to send message to another client
             parse_data_from_client(client_address, data_from_client)

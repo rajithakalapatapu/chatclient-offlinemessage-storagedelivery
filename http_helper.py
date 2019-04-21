@@ -296,7 +296,7 @@ def prepare_ack_message():
     return prepare_http_msg_response("200 OK", SEND_MESSAGE)
 
 
-def prepare_get_all_pending_requests_response(pending_requests):
+def prepare_get_all_pending_requests_response(all_requests):
     """
     Given a list of pending clearance request, prepares a HTTP response message containing
     the requests
@@ -313,7 +313,7 @@ def prepare_get_all_pending_requests_response(pending_requests):
 
     [json list of clearance requests]
     """
-    return prepare_http_msg_response("200 OK", pending_requests)
+    return prepare_http_msg_response("200 OK", all_requests)
 
 
 def prepare_cleared_requests_post_msg(cleared_requests):

@@ -249,7 +249,7 @@ def setup_notification_window():
     notification_window.protocol("WM_DELETE_WINDOW", exit_program)
 
 
-def send_request_to_get_all_pending_clearances():
+def send_request_to_get_all_cleared_courses():
     """
     Send the HTTP request to MQS to get all pending clerances
     :return:
@@ -278,9 +278,8 @@ def get_all_cleared_requests():
     Restart the timer once again for 3 seconds
     :return: None
     """
-    add_msg_to_scrollbox("Getting all pending student-course clearance requests\n")
 
-    send_request_to_get_all_pending_clearances()
+    send_request_to_get_all_cleared_courses()
 
     # Restart the timer again to one second - at the end of the second, we call
     # clock_tick again which increments the value by 1
