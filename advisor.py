@@ -10,6 +10,7 @@ from tkinter import ttk, scrolledtext, messagebox, END
 import socket
 from threading import Thread, Timer
 from http_helper import *
+from advisor_process_queue import AdvisorClearanceQueue
 
 # References:
 # Python GUI cookbook by Packtpub
@@ -36,6 +37,7 @@ scroll_height = 15
 msg_area = scrolledtext.ScrolledText(
     advisor_window, width=scroll_width, height=scroll_height, wrap=tk.WORD
 )
+advisor_clearance_queue = AdvisorClearanceQueue()
 
 
 def exit_program():
@@ -112,12 +114,57 @@ def display_incoming_message(msg):
         print("Sending message failed {}".format(msg))
 
 
+def post_cleared_requests_to_mqs():
+    advisor_socket.sendall(
+        bytes(
+            prepare_cleared_requests_post_msg(
+                advisor_clearance_queue.get_all_pending_requests()
+            ),
+            "UTF-8",
+        )
+    )  # send cleared (approved/rejected) course clearance request to MQS
+
+
 def parse_get_all_pending_clearance_response(msg):
     """
     parses response containing all pending clearance requests
     :return: None
     """
-    add_msg_to_scrollbox("TODO {}\n".format(msg))
+    """handle empty response """
+    """handle valid response """
+
+    """
+    This is the HTTP response message with 
+    
+    HTTP/1.0 200 OK --- status line [index 0]
+    Content-Type:Application/json -- headers [index 1]
+    Content-Length:2
+    Host:127.0.0.1
+    Date:2019-04-21 00:51:56.592347
+    User-Agent:Custom HTTP endpoint written for CSE5306 lab [index 5]
+    [index 6]
+    [["pending/student/course/clearance"], ["sss", "ccc"]] actual data [index 7]
+    """
+    msg = msg.split("\n")
+    response_body = msg[7]
+    if len(response_body) > 1:
+        import json
+
+        clearance_requests = json.loads(response_body)
+        clearance_requests = clearance_requests[1:]
+
+        for request in clearance_requests:
+            import random
+
+            r1 = random.randint(0, 10)
+            if r1 <= 5:
+                approval = True
+            else:
+                approval = False
+            advisor_clearance_queue.add_request(request[0], request[1], approval)
+
+        post_cleared_requests_to_mqs()
+        add_msg_to_scrollbox("TODO {}\n".format(clearance_requests))
 
 
 def parse_incoming_message(msg):

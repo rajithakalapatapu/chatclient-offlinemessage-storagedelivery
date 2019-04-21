@@ -18,6 +18,7 @@ REGISTER_CLIENT_NAME = "register/client/name"
 SEND_MESSAGE = "send/message"
 REQUEST_COURSE_CLEARANCE = "requesting/student/course/clearance"
 GET_PENDING_STUDENT_CLEARANCE_REQUESTS = "pending/student/course/clearance"
+PROCESSED_COURSE_CLEARANCE = "processed/student/course/clearance"
 
 
 def extract_client_name(http_request):
@@ -312,3 +313,26 @@ def prepare_get_all_pending_requests_response(pending_requests):
     [json list of clearance requests]
     """
     return prepare_http_msg_response("200 OK", pending_requests)
+
+
+def prepare_cleared_requests_post_msg(cleared_requests):
+    """
+        Given a list of cleared requests, prepares a HTTP response message containing
+        the requests
+        :param cleared_requests: list of student cleared (approved/rejected) requests
+        :return: string holding HTTP 200 OK response
+
+        example
+        HTTP/1.0 200 OK
+        header1
+        header2
+        ...
+        ...
+        header5
+
+        [json list of clearance requests]
+        """
+    import json
+
+    body = {"resource": PROCESSED_COURSE_CLEARANCE, "data": cleared_requests}
+    return prepare_http_msg_request("POST", SEND_MESSAGE, json.dumps(body))
