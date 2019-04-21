@@ -19,6 +19,7 @@ SEND_MESSAGE = "send/message"
 REQUEST_COURSE_CLEARANCE = "requesting/student/course/clearance"
 GET_PENDING_STUDENT_CLEARANCE_REQUESTS = "pending/student/course/clearance"
 PROCESSED_COURSE_CLEARANCE = "processed/student/course/clearance"
+GET_CLEARED_REQUESTS = "get/cleared/requests"
 
 
 def extract_client_name(http_request):

@@ -75,6 +75,7 @@ student_request_queue = StudentRequestQueue()
 # A simple queue for maintaining cleared student requests
 notification_queue = NotificationRequestQueue()
 
+
 def get_address_from_name(name):
     """
     given the client name, extract client address from the connected_clients global dict
