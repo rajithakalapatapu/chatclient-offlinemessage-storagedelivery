@@ -115,7 +115,9 @@ def send_student_course_clearance_message(student_course_tuple):
     # body contains the action (requesting course clearance in this case), student name and course name
     sent_bytes = student_socket.send(
         bytes(
-            prepare_http_msg_request("POST", REQUEST_COURSE_CLEARANCE, json.dumps(body)),
+            prepare_http_msg_request(
+                "POST", REQUEST_COURSE_CLEARANCE, json.dumps(body)
+            ),
             "UTF-8",
         )
     )

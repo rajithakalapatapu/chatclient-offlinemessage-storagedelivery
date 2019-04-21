@@ -223,7 +223,9 @@ def send_request_to_get_all_pending_clearances():
     # body contains the action (requesting course clearance in this case), student name and course name
     sent_bytes = advisor_socket.send(
         bytes(
-            prepare_http_msg_request("GET", GET_PENDING_STUDENT_CLEARANCE_REQUESTS, json.dumps(body)),
+            prepare_http_msg_request(
+                "GET", GET_PENDING_STUDENT_CLEARANCE_REQUESTS, json.dumps(body)
+            ),
             "UTF-8",
         )
     )

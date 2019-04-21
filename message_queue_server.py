@@ -184,10 +184,6 @@ def parse_student_course_clearance_request(data_from_client):
     )
 
 
-def send_all_pending_student_clearance_requests():
-    add_msg_to_scrollbox("send_all_pending_student_clearance_requests")
-
-
 def read_from_client(client_connection, event_mask):
     """
     this method is responsible for reading data from a client
@@ -244,7 +240,16 @@ def read_from_client(client_connection, event_mask):
             parse_student_course_clearance_request(data_from_client)
         elif GET_PENDING_STUDENT_CLEARANCE_REQUESTS in data_from_client:
             # Advisor process wants to get all pending student clearance requests
-            send_all_pending_student_clearance_requests()
+            pendings_requests = student_request_queue.get_all_pending_requests()
+            response_message = prepare_get_all_pending_requests_response(
+                [GET_PENDING_STUDENT_CLEARANCE_REQUESTS] + pendings_requests
+            )
+            add_msg_to_scrollbox(
+                "Sending all pending student clearance requests to Advisor"
+            )
+            connected_clients[client_address][0].sendall(
+                bytes(response_message, "UTF-8")
+            )
         else:
             # A client wants to send message to another client
             parse_data_from_client(client_address, data_from_client)

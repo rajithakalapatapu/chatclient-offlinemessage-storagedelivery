@@ -292,3 +292,23 @@ def prepare_ack_message():
     "send/message"
     """
     return prepare_http_msg_response("200 OK", SEND_MESSAGE)
+
+
+def prepare_get_all_pending_requests_response(pending_requests):
+    """
+    Given a list of pending clearance request, prepares a HTTP response message containing
+    the requests
+    :param names: list of student pending clearance requests
+    :return: string holding HTTP 200 OK response
+
+    example
+    HTTP/1.0 200 OK
+    header1
+    header2
+    ...
+    ...
+    header5
+
+    [json list of clearance requests]
+    """
+    return prepare_http_msg_response("200 OK", pending_requests)
