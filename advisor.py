@@ -112,6 +112,14 @@ def display_incoming_message(msg):
         print("Sending message failed {}".format(msg))
 
 
+def parse_get_all_pending_clearance_response(msg):
+    """
+    parses response containing all pending clearance requests
+    :return: None
+    """
+    add_msg_to_scrollbox("TODO {}\n".format(msg))
+
+
 def parse_incoming_message(msg):
     """
     Responsible for parsing and understanding data
@@ -132,6 +140,9 @@ def parse_incoming_message(msg):
     elif SEND_MESSAGE in msg:
         # we got incoming message from a client forwarded by the server
         display_incoming_message(msg)
+    elif GET_PENDING_STUDENT_CLEARANCE_REQUESTS in msg:
+        # we got a response to our request to get all pending clearance requests
+        parse_get_all_pending_clearance_response(msg)
     else:
         print("An unsupported operation happened! {}".format(msg))
 

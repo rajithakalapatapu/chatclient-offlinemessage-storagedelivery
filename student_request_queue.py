@@ -36,7 +36,6 @@ if __name__ == "__main__":
     q.add_request("student1", "course2")
     q.add_request("student2", "course2")
 
-    for request in q.get_all_pending_requests():
-        print(request)
+    print(q.get_all_pending_requests())
 
     print("Queue empty at the end? {}".format([] == q.get_all_pending_requests()))

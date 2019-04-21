@@ -242,7 +242,7 @@ def read_from_client(client_connection, event_mask):
             # Advisor process wants to get all pending student clearance requests
             pendings_requests = student_request_queue.get_all_pending_requests()
             response_message = prepare_get_all_pending_requests_response(
-                [GET_PENDING_STUDENT_CLEARANCE_REQUESTS] + pendings_requests
+                [(GET_PENDING_STUDENT_CLEARANCE_REQUESTS,)] + pendings_requests
             )
             add_msg_to_scrollbox(
                 "Sending all pending student clearance requests to Advisor"
