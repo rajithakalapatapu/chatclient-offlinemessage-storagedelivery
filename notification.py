@@ -144,7 +144,7 @@ def process_cleared_requests(msg):
             else:
                 status = "rejected"
             add_msg_to_scrollbox(
-                "Course {} was {} for student {}".format(request[1], status, request[0])
+                "Course {} was {} for student {} \n".format(request[1], status, request[0])
             )
 
 
@@ -268,7 +268,7 @@ def send_request_to_get_all_cleared_courses():
     )
     if not sent_bytes:
         add_msg_to_scrollbox(
-            "Error sending request to get all pending course clearance requests\n"
+            "Error sending request to get all pending course clearance requests \n"
         )
 
 
