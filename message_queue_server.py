@@ -469,6 +469,32 @@ def exit_program():
         def_selector.unregister(client[0])
         client[0].close()
     server_window.destroy()
+    dump_queue_data_to_pickle_files()
+
+
+def dump_queue_data_to_pickle_files():
+    import pickle
+
+    queue_items = student_request_queue.get_all_pending_requests()
+    pickle.dump(queue_items, open("student_request_queue.p", "wb"))
+    queue_items = notification_queue.get_all_cleared_requests()
+    pickle.dump(queue_items, open("notification_queue.p", "wb"))
+
+
+def load_queue_data_from_pickle_files():
+    import pickle
+
+    try:
+        global student_request_queue, notification_queue
+        student_items = pickle.load(open("student_request_queue.p", "rb"))
+        for item in student_items:
+            student_request_queue.add_request(item[0], item[1])
+        notification_items = pickle.load(open("notification_queue.p", "rb"))
+        for item in notification_items:
+            notification_queue.add_request(item[0], item[1], item[2])
+    except EOFError as e:
+        # we received EOFError so most likely pickle file is empty
+        pass
 
 
 def setup_server_window():
@@ -513,6 +539,7 @@ def main():
         - responsible for calling the tkinter main loop (event loop)
     """
     setup_server_window()
+    load_queue_data_from_pickle_files()
     setup_server_socket()
     server_window.mainloop()
 

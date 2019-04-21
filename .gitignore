@@ -153,6 +153,9 @@ ipython_config.py
 # celery beat schedule file
 celerybeat-schedule
 
+# all pickle files
+*.p
+
 # SageMath parsed files
 *.sage.py
 
