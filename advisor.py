@@ -210,7 +210,35 @@ def setup_advisor_window():
     advisor_window.protocol("WM_DELETE_WINDOW", exit_program)
 
 
-def get_all_pending_requests():
+def send_request_to_get_all_pending_clearances():
+    """
+    Send the HTTP request to MQS to get all pending clerances
+    :return:
+    """
+    # prepare body of the http request
+    body = {"action": GET_PENDING_STUDENT_CLEARANCE_REQUESTS}
+    import json
+
+    # send a HTTP POST message to the server
+    # body contains the action (requesting course clearance in this case), student name and course name
+    sent_bytes = advisor_socket.send(
+        bytes(
+            prepare_http_msg_request("GET", GET_PENDING_STUDENT_CLEARANCE_REQUESTS, json.dumps(body)),
+            "UTF-8",
+        )
+    )
+    if sent_bytes:
+        # add the student-course combo to the student scrollbox
+        add_msg_to_scrollbox(
+            "Sent request to get all pending course clearance requests"
+        )
+    else:
+        add_msg_to_scrollbox(
+            "Error sending request to get all pending course clearance requests"
+        )
+
+
+def get_all_pending_clerance_requests():
     """
     Get all pending messages from the MQS
     Restart the timer once again for 3 seconds
@@ -218,9 +246,11 @@ def get_all_pending_requests():
     """
     add_msg_to_scrollbox("Getting all pending student-course clearance requests\n")
 
+    send_request_to_get_all_pending_clearances()
+
     # Restart the timer again to one second - at the end of the second, we call
     # clock_tick again which increments the value by 1
-    t = Timer(3.0, get_all_pending_requests)
+    t = Timer(3.0, get_all_pending_clerance_requests)
     t.daemon = True
     t.start()
 
@@ -235,7 +265,7 @@ def main():
         setup_advisor_window()
         connect_to_server()
         # Instantiate a timer for one second - at the end of one second call "clock_tick"
-        t = Timer(3.0, get_all_pending_requests)
+        t = Timer(3.0, get_all_pending_clerance_requests)
         # make the timer a background thread
         t.daemon = True
         # Start the timer object

@@ -16,7 +16,8 @@ server_port = 9999
 GET_ALL_CLIENTS = "all/client/names"
 REGISTER_CLIENT_NAME = "register/client/name"
 SEND_MESSAGE = "send/message"
-COURSE_CLEARANCE = "student/course/clearance"
+REQUEST_COURSE_CLEARANCE = "requesting/student/course/clearance"
+GET_PENDING_STUDENT_CLEARANCE_REQUESTS = "pending/student/course/clearance"
 
 
 def extract_client_name(http_request):
