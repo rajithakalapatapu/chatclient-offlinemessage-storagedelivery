@@ -130,7 +130,7 @@ def parse_get_all_pending_clearance_response(msg):
     parses response containing all pending clearance requests
     :return: None
     """
-    '''
+    """
     This is the HTTP response message with 
     
     HTTP/1.0 200 OK --- status line [index 0]
@@ -141,14 +141,14 @@ def parse_get_all_pending_clearance_response(msg):
     User-Agent:Custom HTTP endpoint written for CSE5306 lab [index 5]
     [index 6]
     [["pending/student/course/clearance"], ["sss", "ccc"]] actual data [index 7]
-    '''
+    """
 
     msg = msg.split("\n")
     response_body = msg[7]
-    if len(response_body) > 1:
-        import json
+    import json
 
-        clearance_requests = json.loads(response_body)
+    clearance_requests = json.loads(response_body)
+    if len(clearance_requests) > 1:
         clearance_requests = clearance_requests[1:]
 
         for request in clearance_requests:
@@ -162,7 +162,6 @@ def parse_get_all_pending_clearance_response(msg):
             advisor_clearance_queue.add_request(request[0], request[1], approval)
 
         post_cleared_requests_to_mqs()
-        add_msg_to_scrollbox("TODO {}\n".format(clearance_requests))
 
 
 def parse_incoming_message(msg):

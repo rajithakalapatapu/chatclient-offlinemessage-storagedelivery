@@ -322,17 +322,21 @@ def prepare_cleared_requests_post_msg(cleared_requests):
         :param cleared_requests: list of student cleared (approved/rejected) requests
         :return: string holding HTTP 200 OK response
 
-        example
-        HTTP/1.0 200 OK
-        header1
-        header2
-        ...
-        ...
-        header5
+        example:
 
-        [json list of clearance requests]
+        POST processed/student/course/clearance HTTP/1.0
+        Content-Type:Application/json
+        Content-Length:62
+        Host:127.0.0.1
+        Date:2019-04-21 03:06:57.936687
+        User-Agent:Custom HTTP endpoint written for CSE5306 lab
+
+        {"resource": "processed/student/course/clearance", "data": []}
+
         """
     import json
 
     body = {"resource": PROCESSED_COURSE_CLEARANCE, "data": cleared_requests}
-    return prepare_http_msg_request("POST", SEND_MESSAGE, json.dumps(body))
+    return prepare_http_msg_request(
+        "POST", PROCESSED_COURSE_CLEARANCE, json.dumps(body)
+    )
