@@ -13,7 +13,7 @@ class AdvisorClearanceQueue:
             print(e)
             return False
 
-    def get_all_pending_requests(self):
+    def get_all_cleared_requests(self):
         pending_requests = []
         try:
             while not self.request_queue.empty():
@@ -36,6 +36,6 @@ if __name__ == "__main__":
     q.add_request("student1", "course2", False)
     q.add_request("student2", "course2", True)
 
-    print(q.get_all_pending_requests())
+    print(q.get_all_cleared_requests())
 
-    print("Queue empty at the end? {}".format([] == q.get_all_pending_requests()))
+    print("Queue empty at the end? {}".format([] == q.get_all_cleared_requests()))

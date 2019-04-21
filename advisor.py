@@ -118,7 +118,7 @@ def post_cleared_requests_to_mqs():
     advisor_socket.sendall(
         bytes(
             prepare_cleared_requests_post_msg(
-                advisor_clearance_queue.get_all_pending_requests()
+                advisor_clearance_queue.get_all_cleared_requests()
             ),
             "UTF-8",
         )
@@ -130,10 +130,7 @@ def parse_get_all_pending_clearance_response(msg):
     parses response containing all pending clearance requests
     :return: None
     """
-    """handle empty response """
-    """handle valid response """
-
-    """
+    '''
     This is the HTTP response message with 
     
     HTTP/1.0 200 OK --- status line [index 0]
@@ -144,7 +141,8 @@ def parse_get_all_pending_clearance_response(msg):
     User-Agent:Custom HTTP endpoint written for CSE5306 lab [index 5]
     [index 6]
     [["pending/student/course/clearance"], ["sss", "ccc"]] actual data [index 7]
-    """
+    '''
+
     msg = msg.split("\n")
     response_body = msg[7]
     if len(response_body) > 1:
