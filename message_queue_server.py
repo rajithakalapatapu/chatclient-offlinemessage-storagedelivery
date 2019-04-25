@@ -4,7 +4,6 @@ Student ID: 1001682465
 Login ID: vxk2465
 """
 
-
 import tkinter as tk
 from tkinter import ttk, scrolledtext, END
 import socket
@@ -15,7 +14,6 @@ import pprint
 from http_helper import *
 from student_request_queue import StudentRequestQueue
 from notification_request_queue import NotificationRequestQueue
-
 
 PPRINTER = pprint.PrettyPrinter(indent=4)
 # References:
@@ -180,7 +178,9 @@ def parse_student_course_clearance_request(data_from_client):
     action, student_name, course_name = extract_message_details(
         data_from_client.split("\n")[7], "action", "student", "course"
     )
+    # store the incoming request in the student request queue
     student_request_queue.add_request(student_name, course_name)
+    # show update in GUI about incoming request
     add_msg_to_scrollbox(
         "Student {} wants action {} for course {}\n".format(
             student_name, action, course_name
@@ -205,9 +205,11 @@ def parse_processed_course_clearance_data(data_from_client):
     # extract line we care about
     # {"resource": "processed/student/course/clearance", "data": [["sss", "ccc", true]]}'
     cleared_requests = json.loads(data_from_client[7])
+    # extract the data key inside the dict (see above)
     cleared_requests_data = cleared_requests.get("data", [])
+
     for cleared_request in cleared_requests_data:
-        # store them in the queue for notification process
+        # for each element in list, store them in the queue for notification process
         add_msg_to_scrollbox(
             "Adding {} to notification_queue \n".format(cleared_request)
         )
@@ -275,12 +277,15 @@ def read_from_client(client_connection, event_mask):
         elif GET_PENDING_STUDENT_CLEARANCE_REQUESTS in data_from_client:
             # Advisor process wants to get all pending student clearance requests
             pendings_requests = student_request_queue.get_all_pending_requests()
+            # create a HTTP message to hold all pending requests
             response_message = prepare_get_all_pending_requests_response(
                 [(GET_PENDING_STUDENT_CLEARANCE_REQUESTS,)] + pendings_requests
             )
+            # show progress to MQS UI
             add_msg_to_scrollbox(
                 "Sending all pending student clearance requests to Advisor"
             )
+            # send data to the requesting client
             connected_clients[client_address][0].sendall(
                 bytes(response_message, "UTF-8")
             )
@@ -291,15 +296,19 @@ def read_from_client(client_connection, event_mask):
         elif GET_CLEARED_REQUESTS in data_from_client:
             # Notification process wants to get all cleared requests
             cleared_requests = notification_queue.get_all_cleared_requests()
+            # show progress to MQS UI
             add_msg_to_scrollbox(
                 "Going to send notification process {}\n".format(cleared_requests)
             )
+            # create a HTTP message to hold all pending requests
             response_message = prepare_get_all_pending_requests_response(
                 [(GET_CLEARED_REQUESTS,)] + cleared_requests
             )
+            # show progress to MQS UI
             add_msg_to_scrollbox(
                 "Sending all approved/rejected to Notification process\n"
             )
+            # send data to the requesting client
             connected_clients[client_address][0].sendall(
                 bytes(response_message, "UTF-8")
             )
@@ -460,37 +469,59 @@ def setup_server_socket():
 
 def exit_program():
     """
-    Exit the program by closing socket connection and destroying client window
+    Exit the program by
+    closing socket connection,
+    destroying client window,
+    dumping in-memory queues to pickle files
     :return: None
     """
+    # disconnect all clients
     print("Existing clients are {}".format(connected_clients))
     for name, client in connected_clients.items():
         print("Closing connection to client {}".format(name))
         def_selector.unregister(client[0])
         client[0].close()
+    # destroy the server window
     server_window.destroy()
+    # dump in-memory queues to pickle files
     dump_queue_data_to_pickle_files()
 
 
 def dump_queue_data_to_pickle_files():
+    """
+    dumps in-memory queues into pickle files
+    :return:
+    """
     import pickle
 
+    # get all queue items
     queue_items = student_request_queue.get_all_pending_requests()
+    # dump all student request queues into the right file
     pickle.dump(queue_items, open("student_request_queue.p", "wb"))
+    # get all queue items
     queue_items = notification_queue.get_all_cleared_requests()
+    # dump all notification message queues into the right file
     pickle.dump(queue_items, open("notification_queue.p", "wb"))
 
 
 def load_queue_data_from_pickle_files():
+    """
+    loads the message queues from pickle files when GUI is loading
+    :return: None
+    """
     import pickle
 
     try:
         global student_request_queue, notification_queue
+        # Load the student_request_queue pickle file that stores all pending student requests
         student_items = pickle.load(open("student_request_queue.p", "rb"))
         for item in student_items:
+            # loop through each item and add them to the in-memory queue
             student_request_queue.add_request(item[0], item[1])
+        # Load the advisor notification messages that stores all pending notification
         notification_items = pickle.load(open("notification_queue.p", "rb"))
         for item in notification_items:
+            # loop through each item and add them to the in-memory queue
             notification_queue.add_request(item[0], item[1], item[2])
     except EOFError as e:
         # we received EOFError so most likely pickle file is empty
@@ -504,7 +535,7 @@ def setup_server_window():
     """
 
     # create server window
-    server_window.title("Server UI")
+    server_window.title("Message Queue Server UI")
     server_window.geometry("800x640")
     server_window.resizable(False, False)
 
@@ -536,6 +567,7 @@ def main():
     main method of the program
         - responsible for setting up the tkinter based server UI
         - responsible for setting up the server socket connection
+        - responsible for loading pickle files that stores messages persistently
         - responsible for calling the tkinter main loop (event loop)
     """
     setup_server_window()

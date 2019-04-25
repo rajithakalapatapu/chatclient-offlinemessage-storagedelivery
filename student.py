@@ -129,6 +129,7 @@ def send_student_course_clearance_message(student_course_tuple):
             )
         )
     else:
+        # else show that error occured - so that student can retry
         add_msg_to_scrollbox(
             "Error sending clearance request for {} and course {}\n".format(
                 student_course_tuple[0], student_course_tuple[1]

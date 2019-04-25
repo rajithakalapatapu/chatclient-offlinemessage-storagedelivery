@@ -129,25 +129,30 @@ def process_cleared_requests(msg):
     [index 6]
     [["get/cleared/requests"], ["sss", "ccc", true]] actual data [index 7]
     """
-
+    # see above that index 7 is the line we care about
     msg = msg.split("\n")
     response_body = msg[7]
     import json
 
     clearance_requests = json.loads(response_body)
+    # if there's more than one entry, we have some data to process
     if len(clearance_requests) > 1:
+        # start from entry 2 as first entry is dummy entry
         clearance_requests = clearance_requests[1:]
 
         for request in clearance_requests:
             if request[2]:
-                status = "approved"
+                status = "Approved"
             else:
-                status = "rejected"
+                status = "Rejected"
+            # show approval status in UI
             add_msg_to_scrollbox(
                 "Student name {} \nCourse Requested: {} \nAdvisor Decision: {}\n".format(
-                    request[0], request[1], "Approved" if request[2] else "Rejected"
+                    request[0], request[1], status
                 )
             )
+    else:
+        add_msg_to_scrollbox("No message found\n")
 
 
 def parse_incoming_message(msg):
@@ -268,6 +273,7 @@ def send_request_to_get_all_cleared_courses():
             "UTF-8",
         )
     )
+    # if there's an error, show error in GUI
     if not sent_bytes:
         add_msg_to_scrollbox(
             "Error sending request to get all pending course clearance requests \n"
@@ -283,8 +289,8 @@ def get_all_cleared_requests():
 
     send_request_to_get_all_cleared_courses()
 
-    # Restart the timer again to one second - at the end of the second, we call
-    # clock_tick again which increments the value by 1
+    # Restart the timer again to one second - at the end of 7 second, we call
+    # get_all_cleared_requests again
     t = Timer(7.0, get_all_cleared_requests)
     t.daemon = True
     t.start()
@@ -299,7 +305,7 @@ def main():
     try:
         setup_notification_window()
         connect_to_server()
-        # Instantiate a timer for one second - at the end of one second call "clock_tick"
+        # Instantiate a timer for 7 second - at the end of one second call "get_all_cleared_requests"
         t = Timer(7.0, get_all_cleared_requests)
         # make the timer a background thread
         t.daemon = True

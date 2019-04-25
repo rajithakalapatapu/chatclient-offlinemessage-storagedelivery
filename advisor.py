@@ -114,6 +114,7 @@ def display_incoming_message(msg):
 
 
 def post_cleared_requests_to_mqs():
+    # send cleared (approved/rejected) course clearance request to MQS
     advisor_socket.sendall(
         bytes(
             prepare_cleared_requests_post_msg(
@@ -121,7 +122,7 @@ def post_cleared_requests_to_mqs():
             ),
             "UTF-8",
         )
-    )  # send cleared (approved/rejected) course clearance request to MQS
+    )
 
 
 def parse_get_all_pending_clearance_response(msg):
@@ -141,34 +142,42 @@ def parse_get_all_pending_clearance_response(msg):
     [index 6]
     [["pending/student/course/clearance"], ["sss", "ccc"]] actual data [index 7]
     """
-
+    # see above that index 7 is the line we care about
     msg = msg.split("\n")
     response_body = msg[7]
     import json
 
     clearance_requests = json.loads(response_body)
+    # if there's more than one entry, we have some data to process
     if len(clearance_requests) > 1:
+        # start from entry 2 as first entry is dummy entry
         clearance_requests = clearance_requests[1:]
 
         for request in clearance_requests:
+            # show update in UI
             add_msg_to_scrollbox(
                 "Student {} requested clearance for course {}\n".format(
                     request[0], request[1]
                 )
             )
+            # randomly approve or reject course clearance request
             import random
 
-            r1 = random.randint(0, 10)
-            if r1 <= 5:
+            r1 = random.randint(0, 10)  # select a random # between 0 and 9
+            if r1 <= 5:  # if it is between 0 and 5 (inclusive), approve else reject
                 approval = True
             else:
                 approval = False
+            # add the approval information into advisor queue to send to notification process
             advisor_clearance_queue.add_request(request[0], request[1], approval)
+            # show update in UI
             add_msg_to_scrollbox(
                 "Advisor action: {}\n".format("Approved" if approval else "Rejected")
             )
 
         post_cleared_requests_to_mqs()
+    else:
+        add_msg_to_scrollbox("No message found\n")
 
 
 def parse_incoming_message(msg):
@@ -291,6 +300,7 @@ def send_request_to_get_all_pending_clearances():
             "UTF-8",
         )
     )
+    # if there's an error, show error in GUI
     if not sent_bytes:
         add_msg_to_scrollbox(
             "Error sending request to get all pending course clearance requests\n"
@@ -307,8 +317,8 @@ def get_all_pending_clerance_requests():
     #
     send_request_to_get_all_pending_clearances()
 
-    # Restart the timer again to one second - at the end of the second, we call
-    # clock_tick again which increments the value by 1
+    # Restart the timer again to one second - at the end of 3 seconds, we call
+    # get_all_pending_clerance_requests again
     t = Timer(3.0, get_all_pending_clerance_requests)
     t.daemon = True
     t.start()
@@ -323,7 +333,7 @@ def main():
     try:
         setup_advisor_window()
         connect_to_server()
-        # Instantiate a timer for one second - at the end of one second call "clock_tick"
+        # Instantiate a timer for 3 seconds - at the end of one second call "get_all_pending_clerance_requests"
         t = Timer(3.0, get_all_pending_clerance_requests)
         # make the timer a background thread
         t.daemon = True
