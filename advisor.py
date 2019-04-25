@@ -4,7 +4,6 @@ Student ID: 1001682465
 Login ID: vxk2465
 """
 
-
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, END
 import socket
@@ -152,6 +151,11 @@ def parse_get_all_pending_clearance_response(msg):
         clearance_requests = clearance_requests[1:]
 
         for request in clearance_requests:
+            add_msg_to_scrollbox(
+                "Student {} requested clearance for course {}\n".format(
+                    request[0], request[1]
+                )
+            )
             import random
 
             r1 = random.randint(0, 10)
@@ -160,6 +164,9 @@ def parse_get_all_pending_clearance_response(msg):
             else:
                 approval = False
             advisor_clearance_queue.add_request(request[0], request[1], approval)
+            add_msg_to_scrollbox(
+                "Advisor action: {}\n".format("Approved" if approval else "Rejected")
+            )
 
         post_cleared_requests_to_mqs()
 
@@ -296,8 +303,8 @@ def get_all_pending_clerance_requests():
     Restart the timer once again for 3 seconds
     :return: None
     """
-    add_msg_to_scrollbox("Getting all pending student-course clearance requests\n")
-
+    # add_msg_to_scrollbox("Getting all pending student-course clearance requests\n")
+    #
     send_request_to_get_all_pending_clearances()
 
     # Restart the timer again to one second - at the end of the second, we call

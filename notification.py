@@ -144,8 +144,8 @@ def process_cleared_requests(msg):
             else:
                 status = "rejected"
             add_msg_to_scrollbox(
-                "Course {} was {} for student {} \n".format(
-                    request[1], status, request[0]
+                "Student name {} \nCourse Requested: {} \nAdvisor Decision: {}\n".format(
+                    request[0], request[1], "Approved" if request[2] else "Rejected"
                 )
             )
 
