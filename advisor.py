@@ -31,7 +31,7 @@ advisor_window = tk.Tk()
 # a global label to show connection status - accessed by thread and main
 connection_status = ttk.Label(advisor_window, text="Not connected to server")
 # a global variable to show incoming message - scrollbox - accessed by thread and main
-scroll_width = 32
+scroll_width = 64
 scroll_height = 15
 msg_area = scrolledtext.ScrolledText(
     advisor_window, width=scroll_width, height=scroll_height, wrap=tk.WORD
